@@ -1,3 +1,5 @@
+from typing import Optional, List
+
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -12,10 +14,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
-    qmt_user: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    qmt_password: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    qmt_user: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    qmt_password: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
 
     # Relationships
-    strategies: Mapped[list["Strategy"]] = relationship("Strategy", back_populates="user")
-    orders: Mapped[list["Order"]] = relationship("Order", back_populates="user")
-    positions: Mapped[list["Position"]] = relationship("Position", back_populates="user")
+    strategies: Mapped[List["Strategy"]] = relationship("Strategy", back_populates="user")
+    orders: Mapped[List["Order"]] = relationship("Order", back_populates="user")
+    positions: Mapped[List["Position"]] = relationship("Position", back_populates="user")

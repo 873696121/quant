@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Optional
 
 from sqlalchemy import Integer, String, ForeignKey, Enum as SQLEnum, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -55,7 +56,7 @@ class Order(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    backtest_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("backtests.id"), nullable=True)
+    backtest_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("backtests.id"), nullable=True)
     symbol: Mapped[str] = mapped_column(String(16), nullable=False)
     direction: Mapped[OrderDirection] = mapped_column(order_direction_enum, nullable=False)
     order_type: Mapped[OrderType] = mapped_column(
@@ -63,7 +64,7 @@ class Order(Base):
         default=OrderType.LIMIT,
         nullable=False,
     )
-    price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=True)
     volume: Mapped[int] = mapped_column(Integer, nullable=False)
     filled_volume: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     status: Mapped[OrderStatus] = mapped_column(
@@ -75,4 +76,4 @@ class Order(Base):
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="orders")
-    backtest: Mapped["Backtest | None"] = relationship("Backtest", back_populates="orders")
+    backtest: Mapped[Optional["Backtest"]] = relationship("Backtest", back_populates="orders")

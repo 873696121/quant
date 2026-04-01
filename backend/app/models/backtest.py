@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Optional, List
 
 from sqlalchemy import Integer, String, ForeignKey, Enum as SQLEnum, Date, Numeric
 from sqlalchemy import JSON
@@ -38,7 +39,7 @@ class Backtest(Base):
         default=Decimal("1000000"),
         nullable=False,
     )
-    result_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    result_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     status: Mapped[BacktestStatus] = mapped_column(
         backtest_status_enum,
         default=BacktestStatus.PENDING,
@@ -47,4 +48,4 @@ class Backtest(Base):
 
     # Relationships
     strategy: Mapped["Strategy"] = relationship("Strategy", back_populates="backtests")
-    orders: Mapped[list["Order"]] = relationship("Order", back_populates="backtest")
+    orders: Mapped[List["Order"]] = relationship("Order", back_populates="backtest")

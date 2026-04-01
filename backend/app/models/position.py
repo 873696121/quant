@@ -1,6 +1,8 @@
 from decimal import Decimal
+from typing import Optional
 
-from sqlalchemy import Integer, String, Enum as SQLEnum, Numeric, UniqueConstraint
+from sqlalchemy import Integer, String, Enum as SQLEnum, Numeric, UniqueConstraint, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
@@ -32,6 +34,7 @@ class Position(Base):
     symbol: Mapped[str] = mapped_column(String(16), nullable=False)
     volume: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     avg_cost: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"), nullable=False)
+    current_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=True)
     frozen_volume: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     mode: Mapped[PositionMode] = mapped_column(position_mode_enum, nullable=False)
 
