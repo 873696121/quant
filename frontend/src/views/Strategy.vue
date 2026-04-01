@@ -91,7 +91,7 @@ const formRules = {
   mode: [{ required: true, message: '请选择模式', trigger: 'change' }]
 }
 
-const dialogTitle = computed => isEdit.value ? '编辑策略' : '创建策略'
+const dialogTitle = computed(() => isEdit.value ? '编辑策略' : '创建策略')
 
 onMounted(() => {
   loadStrategies()

@@ -8,7 +8,7 @@
           <template #header>
             <span>总资产</span>
           </template>
-          <div class="stat-value">{{ summary.total_assets || '--' }}</div>
+          <div class="stat-value">{{ formatMoney(summary.total_asset) }}</div>
         </el-card>
       </el-col>
       <el-col :span="6">
@@ -120,6 +120,11 @@ function formatProfit(value) {
   return sign + value.toFixed(2)
 }
 
+function formatMoney(value) {
+  if (value == null) return '--'
+  return value.toLocaleString('zh-CN', { style: 'currency', currency: 'CNY' })
+}
+
 function profitClass(value) {
   if (!value) return ''
   return value >= 0 ? 'profit-up' : 'profit-down'
@@ -144,10 +149,10 @@ function profitClass(value) {
 }
 
 .profit-up {
-  color: #f56c6c;
+  color: #f56c6c;  /* red for profit */
 }
 
 .profit-down {
-  color: #67c23a;
+  color: #67c23a;  /* green for loss */
 }
 </style>

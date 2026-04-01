@@ -3,7 +3,8 @@
 Implements all API endpoints for the quant trading system.
 """
 
-from typing import Optional
+from __future__ import annotations
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
@@ -88,7 +89,7 @@ async def get_current_user_info(
 
 # ============== Strategy Endpoints ==============
 
-@api_router.get("/strategies", response_model=list[StrategyResponse], tags=["strategies"])
+@api_router.get("/strategies", response_model=List[StrategyResponse], tags=["strategies"])
 async def list_strategies(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -156,7 +157,7 @@ async def delete_strategy(
 
 # ============== Order Endpoints ==============
 
-@api_router.get("/orders", response_model=list[OrderResponse], tags=["orders"])
+@api_router.get("/orders", response_model=List[OrderResponse], tags=["orders"])
 async def list_orders(
     mode: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
@@ -211,9 +212,9 @@ async def get_quote(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@api_router.post("/market/quotes", response_model=list[QuoteResponse], tags=["market"])
+@api_router.post("/market/quotes", response_model=List[QuoteResponse], tags=["market"])
 async def get_quotes(
-    codes: list[str],
+    codes: List[str],
     current_user: User = Depends(get_current_user),
 ):
     """Get quotes for multiple symbols."""
@@ -239,7 +240,7 @@ async def get_kline(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@api_router.get("/market/search", response_model=list[SearchResult], tags=["market"])
+@api_router.get("/market/search", response_model=List[SearchResult], tags=["market"])
 async def search_stock(
     keyword: str = Query(...),
     current_user: User = Depends(get_current_user),
@@ -266,7 +267,7 @@ async def get_dashboard_summary(
     return summary
 
 
-@api_router.get("/dashboard/positions", response_model=list[PositionResponse], tags=["dashboard"])
+@api_router.get("/dashboard/positions", response_model=List[PositionResponse], tags=["dashboard"])
 async def get_dashboard_positions(
     mode: str = Query("paper"),
     current_user: User = Depends(get_current_user),

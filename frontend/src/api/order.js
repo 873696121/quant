@@ -14,7 +14,7 @@ export const orderApi = {
   },
 
   cancel(id) {
-    return request.post(`/orders/${id}/cancel`)
+    return request.delete(`/orders/${id}`)
   },
 
   getHistory(params) {

@@ -78,9 +78,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { marketApi } from '@/api/market'
+import * as echarts from 'echarts'
 
 const searchKeyword = ref('')
 const searchResults = ref([])
@@ -89,9 +90,16 @@ const loading = ref(false)
 const currentSymbol = ref('')
 const klinePeriod = ref('daily')
 const klineChart = ref(null)
+let chartInstance = null
 
 onMounted(() => {
   loadWatchlist()
+})
+
+onUnmounted(() => {
+  if (chartInstance) {
+    chartInstance.dispose()
+  }
 })
 
 async function handleSearch() {
@@ -130,7 +138,7 @@ async function viewKline(symbol) {
 async function loadKline() {
   if (!currentSymbol.value) return
   try {
-    const kline = await marketApi.getKline(currentSymbol.value, klinePeriod.value)
+    const kline = await marketApi.getKline(currentSymbol.value, { period: klinePeriod.value })
     renderKline(kline)
   } catch (error) {
     ElMessage.error('加载K线失败')
@@ -138,10 +146,72 @@ async function loadKline() {
 }
 
 function renderKline(klineData) {
-  if (!klineChart.value || !klineData.data) return
-  // ECharts rendering would go here
-  // For now, just show the data exists
-  console.log('Kline data:', klineData)
+  if (!klineChart.value) return
+
+  nextTick(() => {
+    if (!chartInstance) {
+      chartInstance = echarts.init(klineChart.value)
+    }
+
+    const dates = klineData.dates || []
+    const opens = klineData.opens || []
+    const highs = klineData.highs || []
+    const lows = klineData.lows || []
+    const closes = klineData.closes || []
+
+    // K线数据格式: [open, close, low, high]
+    const klineDataFormatted = opens.map((_, i) => [
+      opens[i],
+      closes[i],
+      lows[i],
+      highs[i]
+    ])
+
+    const option = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross' }
+      },
+      grid: {
+        left: '10%',
+        right: '10%',
+        bottom: '15%',
+        top: '10%'
+      },
+      xAxis: {
+        type: 'category',
+        data: dates,
+        boundaryGap: false,
+        axisLabel: {
+          formatter: (value) => value.substring(5)
+        }
+      },
+      yAxis: {
+        type: 'value',
+        scale: true,
+        splitLine: { show: true }
+      },
+      dataZoom: [
+        { type: 'inside', start: 0, end: 100 },
+        { type: 'slider', start: 0, end: 100 }
+      ],
+      series: [
+        {
+          name: 'K线',
+          type: 'candlestick',
+          data: klineDataFormatted,
+          itemStyle: {
+            color: '#ef5350',     // 上涨-红色
+            color0: '#26a69a',   // 下跌-绿色
+            borderColor: '#ef5350',
+            borderColor0: '#26a69a'
+          }
+        }
+      ]
+    }
+
+    chartInstance.setOption(option)
+  })
 }
 
 function priceClass(change) {
