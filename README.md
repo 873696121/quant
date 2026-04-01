@@ -1,4 +1,4 @@
-# Quant 量化交易系统
+# Quant Trading System
 
 A quantitative trading research and execution platform for A-shares, supporting backtesting, paper trading, and live trading via QMT (MiniQMT).
 
