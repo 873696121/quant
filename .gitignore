@@ -1,0 +1,41 @@
+# 环境配置（包含敏感信息）
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# 虚拟环境
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 前端
+node_modules/
+dist/
+.npm
+.yarn
+
+# Docker
+.docker/
+
+# 日志
+*.log
+logs/
+
+# 其他
+.DS_Store
+Thumbs.db
