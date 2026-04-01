@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # 复制依赖文件
 COPY requirements.txt .
 
-# 安装 Python 依赖 (使用预编译 wheel)
-RUN pip install --no-cache-dir -r requirements.txt
+# 安装 Python 依赖 (使用清华镜像源加速)
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 复制代码
 COPY . .
