@@ -2,15 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# 安装系统依赖
+# 只安装运行时依赖，不安装编译工具
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
     default-libmysqlclient-dev \
-    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖文件
 COPY requirements.txt .
+
+# 安装 Python 依赖 (使用预编译 wheel)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 复制代码
@@ -20,4 +20,4 @@ COPY . .
 EXPOSE 8000
 
 # 启动命令
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

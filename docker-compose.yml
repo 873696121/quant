@@ -1,33 +1,54 @@
-version: '3.8'
+# ===========================================
+# Quant 量化交易系统 - Docker 部署配置
+# ===========================================
+# 使用说明:
+# 1. 复制 .env.example 为 .env 并配置参数
+# 2. 确保 CLOUD_HOST 设置为你的云服务器 IP
+# 3. 执行: docker compose up -d
 
 services:
+  # ===========================================
   # MySQL 数据库
+  # ===========================================
   mysql:
     image: mysql:8.0
     container_name: quant_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-quant2026}
-      MYSQL_DATABASE: ${DB_NAME:-quant}
+      MYSQL_ROOT_PASSWORD: ${CLOUD_DB_PASSWORD:-quant2026}
+      MYSQL_DATABASE: ${CLOUD_DB_NAME:-quant}
       TZ: Asia/Shanghai
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "${CLOUD_DB_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${CLOUD_DB_PASSWORD:-quant2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ===========================================
   # Redis 缓存
+  # ===========================================
   redis:
     image: redis:7-alpine
     container_name: quant_redis
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${CLOUD_REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ===========================================
   # 后端 API 服务
+  # ===========================================
   backend:
     build:
       context: ./backend
@@ -37,21 +58,44 @@ services:
     ports:
       - "${API_PORT:-8000}:8000"
     environment:
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=${DB_PASSWORD:-quant2026}
-      - DB_NAME=${DB_NAME:-quant}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - mysql
-      - redis
+      # 部署模式
+      - DEPLOYMENT=${DEPLOYMENT:-local}
+      # 云服务器 IP (统一配置)
+      - CLOUD_HOST=${CLOUD_HOST:-}
+      # 数据库配置 (根据 DEPLOYMENT 自动选择)
+      - LOCAL_DB_HOST=${LOCAL_DB_HOST:-localhost}
+      - LOCAL_DB_PORT=${LOCAL_DB_PORT:-3306}
+      - LOCAL_DB_USER=${LOCAL_DB_USER:-root}
+      - LOCAL_DB_PASSWORD=${LOCAL_DB_PASSWORD:-quant2026}
+      - LOCAL_DB_NAME=${LOCAL_DB_NAME:-quant}
+      # 云数据库配置
+      - CLOUD_DB_HOST=${CLOUD_DB_HOST:-}
+      - CLOUD_DB_PORT=${CLOUD_DB_PORT:-3306}
+      - CLOUD_DB_USER=${CLOUD_DB_USER:-root}
+      - CLOUD_DB_PASSWORD=${CLOUD_DB_PASSWORD:-quant2026}
+      - CLOUD_DB_NAME=${CLOUD_DB_NAME:-quant}
+      # Redis 配置
+      - LOCAL_REDIS_HOST=${LOCAL_REDIS_HOST:-localhost}
+      - LOCAL_REDIS_PORT=${LOCAL_REDIS_PORT:-6379}
+      - LOCAL_REDIS_PASSWORD=${LOCAL_REDIS_PASSWORD:-}
+      - CLOUD_REDIS_HOST=${CLOUD_REDIS_HOST:-}
+      - CLOUD_REDIS_PORT=${CLOUD_REDIS_PORT:-6379}
+      - CLOUD_REDIS_PASSWORD=${CLOUD_REDIS_PASSWORD:-}
+      # 应用配置
+      - DEBUG=${DEBUG:-false}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - DATA_SOURCE=${DATA_SOURCE:-akshare}
     volumes:
       - ./backend:/app
-      - /Users/huhong/.claude/projects:/projects  # QMT等本地数据
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
+  # ===========================================
   # 前端 Web 服务
+  # ===========================================
   frontend:
     build:
       context: ./frontend
@@ -59,10 +103,14 @@ services:
     container_name: quant_frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      - VITE_API_BASE_URL=http://${CLOUD_HOST:-localhost}:${API_PORT:-8000}/api
     depends_on:
       - backend
 
 volumes:
   mysql_data:
+    name: quant_mysql_data
   redis_data:
+    name: quant_redis_data

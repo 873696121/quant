@@ -104,10 +104,10 @@ cd /Users/huhong/PycharmProjects/quant
 tar -czvf quant.tar.gz --exclude='.git' --exclude='node_modules' --exclude='__pycache__' .
 
 # 上传到服务器 (替换为你的服务器 IP)
-scp quant.tar.gz root@115.190.198.148:/root/
+scp quant.tar.gz root@YOUR_CLOUD_IP:/root/
 
 # 在服务器上解压
-ssh root@115.190.198.148
+ssh root@YOUR_CLOUD_IP
 cd /root
 tar -xzvf quant.tar.gz
 ```
@@ -189,10 +189,10 @@ docker exec -it quant_backend python -m alembic upgrade head
 
 | 服务 | 地址 |
 |------|------|
-| 前端 | http://115.190.198.148:3000 |
-| 后端 API | http://115.190.198.148:8000 |
-| API 文档 | http://115.190.198.148:8000/docs |
-| Health 检查 | http://115.190.198.148:8000/health |
+| 前端 | http://${CLOUD_HOST}:3000 |
+| 后端 API | http://${CLOUD_HOST}:8000 |
+| API 文档 | http://${CLOUD_HOST}:8000/docs |
+| Health 检查 | http://${CLOUD_HOST}:8000/health |
 
 ---
 

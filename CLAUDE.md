@@ -123,3 +123,28 @@ All endpoints under `/api` require JWT Bearer token except:
 - **akshare** - Primary for A-share historical and real-time data
 - **tushare** - Alternative data source (requires token)
 - **QMT** - Live trading execution (runs on user's local machine)
+
+## Git Workflow
+
+### 首次打开 Claude
+如果项目不是 git 仓库（没有 `.git` 目录），自动初始化 git 仓库并创建初始提交：
+```bash
+git init
+git add -A
+git commit -m "init"
+```
+
+### 阶段性功能完成
+当完成一个阶段性功能（feature、fix、refactor 等）时，自动创建 commit：
+1. 使用 `git status` 查看变更
+2. 使用 `git diff` 查看具体改动
+3. 根据变更内容撰写 commit message（聚焦于"为什么"，而非"做了什么"）
+4. `git add` 相关文件
+5. `git commit` 创建提交
+
+Commit message 规范：
+- `feat: 新功能描述`
+- `fix: 修复的问题描述`
+- `refactor: 重构描述`
+- `docs: 文档更新`
+- `chore: 杂项维护`
