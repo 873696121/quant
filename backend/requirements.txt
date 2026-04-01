@@ -6,6 +6,7 @@ python-multipart==0.0.9
 # 数据库
 sqlalchemy==2.0.25
 pymysql==1.1.0
+aiomysql==0.2.0
 alembic==1.13.1
 
 # Redis
@@ -15,12 +16,12 @@ redis==5.0.1
 pandas==2.2.0
 numpy==1.26.3
 
-# 数据源
-akshare==1.13.0
-tushare==1.4.0
+# 数据源 (使用兼容Python 3.11的版本)
+akshare>=1.16.72
+tushare>=1.4.0
 
 # QMT接口
-xtquant==1.0.0
+xtquant>=1.0.0
 
 # 工具
 pydantic==2.6.0
