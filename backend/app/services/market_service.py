@@ -1,74 +1,147 @@
-"""Market data service using akshare."""
+"""Market data service.
 
-import os
-from typing import List, Optional, Dict, Any
-from datetime import datetime
+This service provides a unified interface for market data,
+delegating to configurable data source adapters.
 
-import akshare as ak
+Architecture:
+    API Request -> MarketService -> DataSourceAdapter -> External API
+                              |
+                              v
+                      MarketDataFormatter
+                              |
+                              v
+                         System Schema
+"""
+
+from datetime import datetime, date
+from typing import List, Dict, Any, Optional
+
+from app.config import settings
+from app.services.adapters import get_adapter, DataSourceAdapter, RawQuoteData, RawKlineData, RawSearchResult
 
 
-def _clear_proxy():
-    """Clear proxy environment variables for this request."""
-    for k in ['http_proxy', 'https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY']:
-        os.environ.pop(k, None)
+class MarketDataFormatter:
+    """Formats raw adapter data to system schema format."""
+
+    @staticmethod
+    def format_quote(raw: RawQuoteData) -> Dict[str, Any]:
+        """Format raw quote to API response schema.
+
+        Returns dict matching QuoteResponse schema.
+        """
+        return {
+            "symbol": raw.symbol,
+            "name": raw.name,
+            "price": raw.price,
+            "change": raw.change,
+            "change_pct": raw.change_pct,
+            "volume": raw.volume,
+            "amount": raw.amount,
+            "high": raw.high,
+            "low": raw.low,
+            "open": raw.open,
+            "close": raw.close,
+            "timestamp": raw.timestamp,
+        }
+
+    @staticmethod
+    def format_kline(raw: RawKlineData) -> Dict[str, Any]:
+        """Format raw kline to API response schema.
+
+        Returns dict matching KlineResponse schema.
+        """
+        return {
+            "dates": [MarketDataFormatter._to_str(d) for d in raw.dates],
+            "opens": [MarketDataFormatter._to_float(v) for v in raw.opens],
+            "highs": [MarketDataFormatter._to_float(v) for v in raw.highs],
+            "lows": [MarketDataFormatter._to_float(v) for v in raw.lows],
+            "closes": [MarketDataFormatter._to_float(v) for v in raw.closes],
+            "volumes": [MarketDataFormatter._to_float(v) for v in raw.volumes],
+        }
+
+    @staticmethod
+    def format_search(raw_list: List[RawSearchResult]) -> List[Dict[str, str]]:
+        """Format raw search results to API response schema.
+
+        Returns list matching List[SearchResult] schema.
+        """
+        return [
+            {
+                "code": r.code,
+                "name": r.name,
+                "market": r.market,
+                "type": "stock",
+            }
+            for r in raw_list
+        ]
+
+    @staticmethod
+    def _to_str(v: Any) -> str:
+        """Convert value to string (for dates)."""
+        if isinstance(v, str):
+            return v
+        elif isinstance(v, (datetime, date)):
+            return v.strftime('%Y-%m-%d')
+        return str(v)
+
+    @staticmethod
+    def _to_float(v: Any) -> float:
+        """Convert value to float safely."""
+        if v is None:
+            return 0.0
+        try:
+            return float(v)
+        except (ValueError, TypeError):
+            return 0.0
 
 
 class MarketService:
-    """Service for market data operations."""
+    """Main service for market data operations.
+
+    Uses a configurable data source adapter and formats data to system schema.
+
+    Usage:
+        # Use default data source from settings
+        service = MarketService()
+        quote = await service.get_quote("000001.SZ")
+
+        # Use specific data source
+        service = MarketService(data_source="tushare")
+        quote = await service.get_quote("000001.SZ")
+    """
+
+    def __init__(self, data_source: Optional[str] = None):
+        """Initialize market service.
+
+        Args:
+            data_source: Name of data source ('akshare', 'tushare').
+                        Defaults to settings.DATA_SOURCE.
+        """
+        self.data_source = data_source or settings.DATA_SOURCE
+        self.adapter: DataSourceAdapter = get_adapter(self.data_source)
+        self.formatter = MarketDataFormatter()
 
     async def get_quote(self, symbol: str) -> Dict[str, Any]:
         """Get real-time quote for a symbol.
 
         Args:
             symbol: Stock code in format '000001.SZ' or '600000.SH'
+
+        Returns:
+            Quote data in system schema format (QuoteResponse)
         """
-        _clear_proxy()
-
-        # Strip suffix and determine market
-        clean_symbol = symbol.split('.')[0]
-        if symbol.endswith('.SH'):
-            market_prefix = 'sh'
-        else:
-            market_prefix = 'sz'
-
-        try:
-            # Use Tencent K-line interface which includes price info
-            df = ak.stock_zh_a_hist_tx(
-                symbol=f"{market_prefix}{clean_symbol}",
-                start_date="20260401",
-                end_date="20500101",
-                adjust="qfq"
-            )
-            if df.empty:
-                raise ValueError(f"Symbol {symbol} not found")
-
-            latest = df.iloc[-1]
-            prev = df.iloc[-2] if len(df) > 1 else latest
-
-            change = float(latest['close']) - float(prev['close'])
-            change_pct = (change / float(prev['close']) * 100) if float(prev['close']) != 0 else 0
-
-            return {
-                "symbol": symbol,
-                "name": "",  # Will be filled from individual info if needed
-                "price": float(latest['close']),
-                "change": change,
-                "change_pct": round(change_pct, 2),
-                "volume": 0,
-                "amount": float(latest['amount']),
-                "high": float(latest['high']),
-                "low": float(latest['low']),
-                "open": float(latest['open']),
-                "close": float(latest['close']),
-                "timestamp": datetime.now().isoformat(),
-            }
-        except ValueError:
-            raise
-        except Exception as e:
-            raise ValueError(f"Failed to get quote: {str(e)}")
+        raw = await self.adapter.get_quote(symbol)
+        return self.formatter.format_quote(raw)
 
     async def get_quotes(self, symbols: List[str]) -> List[Dict[str, Any]]:
-        """Get quotes for multiple symbols."""
+        """Get quotes for multiple symbols.
+
+        Args:
+            symbols: List of stock codes
+
+        Returns:
+            List of quote data in system schema format
+        """
         results = []
         for symbol in symbols:
             try:
@@ -79,7 +152,8 @@ class MarketService:
         return results
 
     async def get_kline(
-        self, symbol: str, period: str = "daily", start_date: Optional[str] = None, end_date: Optional[str] = None
+        self, symbol: str, period: str = "daily",
+        start_date: Optional[str] = None, end_date: Optional[str] = None
     ) -> Dict[str, Any]:
         """Get kline data for a symbol.
 
@@ -88,76 +162,21 @@ class MarketService:
             period: 'daily' or 'weekly'
             start_date: Start date in YYYYMMDD format
             end_date: End date in YYYYMMDD format
+
+        Returns:
+            Kline data in system schema format (KlineResponse)
         """
-        _clear_proxy()
-
-        # Strip suffix and determine market
-        clean_symbol = symbol.split('.')[0]
-        if symbol.endswith('.SH'):
-            market_prefix = 'sh'
-        else:
-            market_prefix = 'sz'
-
-        try:
-            # Default dates
-            if not start_date:
-                start_date = "20250101"
-            if not end_date:
-                end_date = "20500101"
-
-            df = ak.stock_zh_a_hist_tx(
-                symbol=f"{market_prefix}{clean_symbol}",
-                start_date=start_date.replace('-', ''),
-                end_date=end_date.replace('-', ''),
-                adjust="qfq"
-            )
-
-            if df.empty:
-                raise ValueError(f"Symbol {symbol} not found")
-
-            return {
-                "dates": [str(d) for d in df['date'].tolist()],
-                "opens": [float(o) for o in df['open'].tolist()],
-                "highs": [float(h) for h in df['high'].tolist()],
-                "lows": [float(l) for l in df['low'].tolist()],
-                "closes": [float(c) for c in df['close'].tolist()],
-                "volumes": [float(v) for v in df['amount'].tolist()],
-            }
-        except ValueError:
-            raise
-        except Exception as e:
-            raise ValueError(f"Failed to get kline: {str(e)}")
+        raw = await self.adapter.get_kline(symbol, period, start_date, end_date)
+        return self.formatter.format_kline(raw)
 
     async def search(self, keyword: str) -> List[Dict[str, str]]:
         """Search stocks by keyword.
 
         Args:
-            keyword: Search keyword (stock code or name)
-        """
-        _clear_proxy()
+            keyword: Stock code (e.g., '000001' or '000001.SZ')
 
-        try:
-            # Get K-line data for the keyword as stock code
-            clean_symbol = keyword.split('.')[0]
-            if clean_symbol.isdigit() and len(clean_symbol) == 6:
-                # Try as stock code
-                market_prefix = 'sh' if clean_symbol.startswith(('6', '5')) else 'sz'
-                df = ak.stock_zh_a_hist_tx(
-                    symbol=f"{market_prefix}{clean_symbol}",
-                    start_date="20260401",
-                    end_date="20500101",
-                    adjust="qfq"
-                )
-                if not df.empty:
-                    market = 'SH' if clean_symbol.startswith(('6', '5')) else 'SZ'
-                    return [{
-                        "code": f"{clean_symbol}.{market}",
-                        "name": "",
-                        "market": market,
-                        "type": "stock",
-                    }]
-            raise ValueError(f"No stock found for keyword: {keyword}")
-        except ValueError:
-            raise
-        except Exception as e:
-            raise ValueError(f"Failed to search: {str(e)}")
+        Returns:
+            List of search results in system schema format (List[SearchResult])
+        """
+        raw_results = await self.adapter.search(keyword)
+        return self.formatter.format_search(raw_results)

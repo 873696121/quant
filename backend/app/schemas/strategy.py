@@ -1,7 +1,7 @@
 """Strategy schemas."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +11,7 @@ class StrategyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=128)
     description: Optional[str] = None
     code: str = Field(..., min_length=1)
-    mode: str = Field(default="backtest")
+    mode: Literal["backtest", "paper", "live"] = Field(default="backtest")
     config: Optional[dict] = None
 
 
@@ -20,7 +20,7 @@ class StrategyUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=128)
     description: Optional[str] = None
     code: Optional[str] = None
-    mode: Optional[str] = None
+    mode: Optional[Literal["backtest", "paper", "live"]] = None
     config: Optional[dict] = None
 
 
