@@ -90,6 +90,7 @@ def upgrade() -> None:
         sa.Column('symbol', String(16), nullable=False),
         sa.Column('volume', Integer, server_default='0', nullable=False),
         sa.Column('avg_cost', Numeric(10, 2), server_default='0', nullable=False),
+        sa.Column('current_price', Numeric(10, 2), nullable=True),
         sa.Column('frozen_volume', Integer, server_default='0', nullable=False),
         sa.Column('mode', SQLEnum('backtest', 'paper', 'live', name='position_mode'), nullable=False),
         sa.Column('created_at', sa.DateTime, server_default=sa.func.now(), nullable=False),
