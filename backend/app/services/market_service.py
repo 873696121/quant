@@ -180,3 +180,128 @@ class MarketService:
         """
         raw_results = await self.adapter.search(keyword)
         return self.formatter.format_search(raw_results)
+
+    async def get_historical_full(
+        self,
+        symbol: str,
+        period: str = "daily",
+        years: int = 10
+    ) -> Dict[str, Any]:
+        """Get full historical kline data from many years ago to now.
+
+        Use this for initial data load or full refresh.
+
+        Args:
+            symbol: Stock code in format '000001.SZ' or '600000.SH'
+            period: 'daily' or 'weekly'
+            years: Number of years of history to fetch (default 10)
+
+        Returns:
+            Kline data in system schema format with all historical data
+        """
+        from datetime import timedelta
+        end_date = datetime.now().strftime('%Y%m%d')
+        start_date = (datetime.now() - timedelta(days=years*365)).strftime('%Y%m%d')
+
+        raw = await self.adapter.get_kline(symbol, period, start_date, end_date)
+        return self.formatter.format_kline(raw)
+
+    async def get_historical_incremental(
+        self,
+        symbol: str,
+        last_date: str,
+        period: str = "daily"
+    ) -> Dict[str, Any]:
+        """Get incremental kline data since last update.
+
+        Use this for daily updates after initial load.
+        Returns data from last_date (exclusive) to now.
+
+        Args:
+            symbol: Stock code in format '000001.SZ' or '600000.SH'
+            last_date: Last date already in database (YYYY-MM-DD format)
+            period: 'daily' or 'weekly'
+
+        Returns:
+            Kline data in system schema format with only new data
+        """
+        # Convert YYYY-MM-DD to YYYYMMDD for API
+        start_date = last_date.replace('-', '')
+        end_date = datetime.now().strftime('%Y%m%d')
+
+        raw = await self.adapter.get_kline(symbol, period, start_date, end_date)
+
+        # Filter out the last_date itself (exclusive)
+        formatted = self.formatter.format_kline(raw)
+        filtered_dates = []
+        filtered_opens = []
+        filtered_highs = []
+        filtered_lows = []
+        filtered_closes = []
+        filtered_volumes = []
+
+        for i, d in enumerate(formatted['dates']):
+            if d > last_date:
+                filtered_dates.append(d)
+                filtered_opens.append(formatted['opens'][i])
+                filtered_highs.append(formatted['highs'][i])
+                filtered_lows.append(formatted['lows'][i])
+                filtered_closes.append(formatted['closes'][i])
+                filtered_volumes.append(formatted['volumes'][i])
+
+        return {
+            "dates": filtered_dates,
+            "opens": filtered_opens,
+            "highs": filtered_highs,
+            "lows": filtered_lows,
+            "closes": filtered_closes,
+            "volumes": filtered_volumes,
+        }
+
+    async def batch_get_historical_full(
+        self,
+        symbols: List[str],
+        period: str = "daily",
+        years: int = 10
+    ) -> Dict[str, Dict[str, Any]]:
+        """Get full historical kline data for multiple symbols.
+
+        Args:
+            symbols: List of stock codes
+            period: 'daily' or 'weekly'
+            years: Number of years of history to fetch
+
+        Returns:
+            Dict mapping symbol to Kline data
+        """
+        results = {}
+        for symbol in symbols:
+            try:
+                data = await self.get_historical_full(symbol, period, years)
+                results[symbol] = data
+            except Exception:
+                continue
+        return results
+
+    async def batch_get_historical_incremental(
+        self,
+        last_dates: Dict[str, str],
+        period: str = "daily"
+    ) -> Dict[str, Dict[str, Any]]:
+        """Get incremental kline data for multiple symbols.
+
+        Args:
+            last_dates: Dict mapping symbol to last date (YYYY-MM-DD format)
+            period: 'daily' or 'weekly'
+
+        Returns:
+            Dict mapping symbol to Kline data with only new data
+        """
+        results = {}
+        for symbol, last_date in last_dates.items():
+            try:
+                data = await self.get_historical_incremental(symbol, last_date, period)
+                results[symbol] = data
+            except Exception:
+                continue
+        return results

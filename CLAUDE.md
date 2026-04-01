@@ -80,6 +80,7 @@ cd frontend && npm run test
 - `models/` - SQLAlchemy models: `user.py`, `strategy.py`, `order.py`, `position.py`, `backtest.py`, `market.py`
 - `schemas/` - Pydantic request/response schemas
 - `services/` - Business logic: `auth_service.py`, `strategy_service.py`, `order_service.py`, `market_service.py`, `dashboard_service.py`
+- `services/adapters/` - 数据源适配器: `base.py` (抽象接口), `akshare_adapter.py`, `tushare_adapter.py`
 - `engine/` - Backtest engine (placeholder)
 - `executors/` - Execution engines (simulated, QMT)
 
@@ -221,6 +222,43 @@ service = MarketService()
 TUSHARE_TOKEN=your_token_here
 ```
 访问 https://tushare.pro 注册申请
+
+### 数据获取模式
+
+MarketService 提供两种历史数据获取模式：
+
+**1. 全量获取 (get_historical_full)**
+- 用于首次加载或全量刷新
+- 获取多年历史数据到当前日期
+```python
+# 获取10年历史数据
+data = await service.get_historical_full("000001.SZ", period="daily", years=10)
+
+# 批量获取
+results = await service.batch_get_historical_full(
+    ["000001.SZ", "600519.SH"],
+    period="daily",
+    years=5
+)
+```
+
+**2. 增量获取 (get_historical_incremental)**
+- 用于每日打开系统后查漏补缺
+- 获取自 last_date 之后的新数据
+```python
+# 获取自上次更新以来的新数据
+data = await service.get_historical_incremental(
+    "000001.SZ",
+    last_date="2026-03-25",  # YYYY-MM-DD 格式
+    period="daily"
+)
+
+# 批量增量获取
+results = await service.batch_get_historical_incremental(
+    {"000001.SZ": "2026-03-25", "600519.SH": "2026-03-20"},
+    period="daily"
+)
+```
 
 ### QMT
 - Live trading execution (runs on user's local machine)
