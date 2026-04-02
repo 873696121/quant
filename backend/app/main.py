@@ -11,15 +11,33 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import api_router
 from app.config import settings
+from app.core.logging import setup_logging, get_logger
+from app.core.tracing import TracingMiddleware
+
+# Setup logging
+setup_logging(level=settings.log_level)
+logger = get_logger(__name__)
+
+# Initialize Sentry if DSN is configured
+if settings.sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastAPIIntegration
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        integrations=[FastAPIIntegration()],
+        environment=settings.DEPLOYMENT,
+    )
+    logger.info("Sentry initialized")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown events."""
     # Startup
+    logger.info("Quant backend starting up...")
     yield
     # Shutdown
-    pass
+    logger.info("Quant backend shutting down...")
 
 
 # Create FastAPI application
@@ -58,6 +76,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add tracing middleware
+app.add_middleware(TracingMiddleware)
 
 # Include API routes
 app.include_router(api_router)

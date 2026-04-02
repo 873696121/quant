@@ -63,7 +63,7 @@ services:
       # 云服务器 IP (统一配置)
       - CLOUD_HOST=${CLOUD_HOST:-}
       # 数据库配置 (根据 DEPLOYMENT 自动选择)
-      - LOCAL_DB_HOST=${LOCAL_DB_HOST:-localhost}
+      - LOCAL_DB_HOST=mysql
       - LOCAL_DB_PORT=${LOCAL_DB_PORT:-3306}
       - LOCAL_DB_USER=${LOCAL_DB_USER:-root}
       - LOCAL_DB_PASSWORD=${LOCAL_DB_PASSWORD:-quant2026}

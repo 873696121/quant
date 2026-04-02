@@ -67,14 +67,13 @@ class SQLAlchemyOrderRepository(OrderRepository):
             # 更新
             stmt = update(OrderModel).where(OrderModel.id == order.id).values(
                 symbol=order.symbol,
-                direction=order.side.value,
-                order_type=order.order_type.value,
+                direction=str(order.side.value) if hasattr(order.side, 'value') else order.side,
+                order_type=str(order.order_type.value) if hasattr(order.order_type, 'value') else order.order_type,
                 price=order.price,
-                stop_price=order.stop_price,
                 volume=order.volume,
                 filled_volume=order.filled_volume,
-                status=order.status.value,
-                mode=order.mode.value,
+                status=str(order.status.value) if hasattr(order.status, 'value') else order.status,
+                mode=str(order.mode.value) if hasattr(order.mode, 'value') else order.mode,
                 backtest_id=order.backtest_id,
             )
             await self.session.execute(stmt)

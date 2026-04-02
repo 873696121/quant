@@ -70,6 +70,8 @@ class Settings(BaseSettings):
     # API configuration
     # ===========================================
     DEBUG: bool = False
+    log_level: str = "INFO"
+    sentry_dsn: str = ""
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     FRONTEND_PORT: int = 3000

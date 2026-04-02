@@ -4,6 +4,13 @@ from app.domain.trading.value_objects.order_type import OrderTypeEnum
 from app.domain.trading.value_objects.order_status import OrderStatusEnum
 
 
+def _get_value(val):
+    """Helper to get value from enum or string"""
+    if hasattr(val, 'value'):
+        return val.value
+    return val
+
+
 def orm_to_order(orm_order) -> Order:
     """ORM模型转换为领域对象"""
     if orm_order is None:
@@ -12,15 +19,15 @@ def orm_to_order(orm_order) -> Order:
         id=orm_order.id,
         user_id=orm_order.user_id,
         symbol=orm_order.symbol,
-        side=OrderSideEnum(orm_order.direction.value),
-        order_type=OrderTypeEnum(orm_order.order_type.value),
+        side=OrderSideEnum(_get_value(orm_order.direction)),
+        order_type=OrderTypeEnum(_get_value(orm_order.order_type)),
         price=float(orm_order.price) if orm_order.price else 0.0,
         stop_price=0.0,
         volume=orm_order.volume,
         filled_volume=orm_order.filled_volume,
         filled_price=0.0,
-        status=OrderStatusEnum(orm_order.status.value),
-        mode=orm_order.mode.value,
+        status=OrderStatusEnum(_get_value(orm_order.status)),
+        mode=_get_value(orm_order.mode),
         backtest_id=orm_order.backtest_id,
         created_at=orm_order.created_at,
         updated_at=orm_order.updated_at,
@@ -34,7 +41,6 @@ def order_to_orm(order: Order, orm_order) -> None:
     orm_order.direction = order.side.value
     orm_order.order_type = order.order_type.value
     orm_order.price = order.price
-    orm_order.stop_price = order.stop_price
     orm_order.volume = order.volume
     orm_order.filled_volume = order.filled_volume
     orm_order.status = order.status.value
