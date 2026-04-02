@@ -6,15 +6,15 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
-from infrastructure.persistence.repositories.sqlalchemy_order_repository import (
+from app.core.database import get_db
+from app.infrastructure.persistence.repositories.sqlalchemy_order_repository import (
     SQLAlchemyOrderRepository
 )
-from infrastructure.persistence.repositories.sqlalchemy_position_repository import (
+from app.infrastructure.persistence.repositories.sqlalchemy_position_repository import (
     SQLAlchemyPositionRepository
 )
-from domain.trading.services.order_fill_service import OrderFillService
-from application.trading.commands.handlers import OrderCommandHandler
+from app.domain.trading.services.order_fill_service import OrderFillService
+from app.application.trading.commands.handlers import OrderCommandHandler
 
 
 def get_order_repository(

@@ -1,5 +1,5 @@
 from typing import Optional
-from domain.account.aggregates.user import User
+from app.domain.account.aggregates.user import User
 
 
 class UserRepository:

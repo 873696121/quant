@@ -1,5 +1,5 @@
-from domain.trading.aggregates.position import Position
-from domain.trading.value_objects.position_mode import PositionModeEnum
+from app.domain.trading.aggregates.position import Position
+from app.domain.trading.value_objects.position_mode import PositionModeEnum
 
 
 def orm_to_position(orm_position) -> Position:

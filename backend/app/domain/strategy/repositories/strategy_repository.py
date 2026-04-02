@@ -1,5 +1,5 @@
 from typing import Optional, List
-from domain.strategy.aggregates.strategy import Strategy, Backtest
+from app.domain.strategy.aggregates.strategy import Strategy, Backtest
 
 
 class StrategyRepository:

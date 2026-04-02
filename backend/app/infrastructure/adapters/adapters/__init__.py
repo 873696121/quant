@@ -4,7 +4,7 @@ Adapters provide a unified interface for different data sources.
 Each adapter implements the DataSourceAdapter interface.
 
 Usage:
-    from app.services.adapters import AkshareAdapter, TushareAdapter
+    from app.infrastructure.adapters.adapters import AkshareAdapter, TushareAdapter
 
     # Get adapter by name
     adapter = get_adapter("akshare")

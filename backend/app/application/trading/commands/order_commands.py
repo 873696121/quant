@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from domain.trading.value_objects.order_side import OrderSideEnum
-from domain.trading.value_objects.order_type import OrderTypeEnum
+from app.domain.trading.value_objects.order_side import OrderSideEnum
+from app.domain.trading.value_objects.order_type import OrderTypeEnum
 
 
 @dataclass

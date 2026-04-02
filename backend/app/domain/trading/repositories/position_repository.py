@@ -1,5 +1,5 @@
 from typing import Optional, List
-from domain.trading.aggregates.position import Position
+from app.domain.trading.aggregates.position import Position
 
 
 class PositionRepository:

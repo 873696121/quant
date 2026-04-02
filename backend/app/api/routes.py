@@ -20,13 +20,13 @@ from app.schemas.market import QuoteResponse, KlineResponse, SearchResult, Dashb
 from app.services.auth_service import AuthService
 from app.services.strategy_service import StrategyService
 from app.services.order_service import OrderService
-from app.services.market_service import MarketService
+from app.infrastructure.adapters.market_data.market_service import MarketService
 from app.services.dashboard_service import DashboardService
 from app.application.services import get_order_command_handler
 from app.application.trading.commands.order_commands import CreateOrderCommand, CancelOrderCommand
 from app.domain.trading.value_objects.order_side import OrderSideEnum
 from app.domain.trading.value_objects.order_type import OrderTypeEnum
-from application.trading.commands.handlers import OrderCommandHandler
+from app.application.trading.commands.handlers import OrderCommandHandler
 
 # Main API router
 api_router = APIRouter(prefix="/api")
@@ -179,7 +179,7 @@ async def list_orders(
 async def create_order(
     data: OrderCreate,
     current_user: User = Depends(get_current_user),
-    handler: Annotated[OrderCommandHandler, Depends(get_order_command_handler)],
+    handler: OrderCommandHandler = Depends(get_order_command_handler),
 ):
     """Create a new order (simulated fill) using DDD application layer."""
     cmd = CreateOrderCommand(
@@ -199,7 +199,7 @@ async def create_order(
 async def cancel_order(
     order_id: int,
     current_user: User = Depends(get_current_user),
-    handler: Annotated[OrderCommandHandler, Depends(get_order_command_handler)],
+    handler: OrderCommandHandler = Depends(get_order_command_handler),
 ):
     """Cancel an order using DDD application layer."""
     cmd = CancelOrderCommand(

@@ -2,10 +2,10 @@ from typing import Optional, List
 from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from domain.trading.aggregates.position import Position
-from domain.trading.repositories.position_repository import PositionRepository
-from infrastructure.persistence.mappers.position_mapper import orm_to_position, position_to_orm
-from models.position import Position as PositionModel
+from app.domain.trading.aggregates.position import Position
+from app.domain.trading.repositories.position_repository import PositionRepository
+from app.infrastructure.persistence.mappers.position_mapper import orm_to_position, position_to_orm
+from app.models.position import Position as PositionModel
 
 
 class SQLAlchemyPositionRepository(PositionRepository):

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 from enum import Enum
 
-from domain.strategy.value_objects.strategy_mode import StrategyModeEnum, BacktestStatusEnum
+from app.domain.strategy.value_objects.strategy_mode import StrategyModeEnum, BacktestStatusEnum
 
 
 @dataclass

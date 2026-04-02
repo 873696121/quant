@@ -1,6 +1,6 @@
 from typing import Optional, List
-from domain.trading.aggregates.order import Order
-from domain.trading.value_objects.order_status import OrderStatusEnum
+from app.domain.trading.aggregates.order import Order
+from app.domain.trading.value_objects.order_status import OrderStatusEnum
 
 
 class OrderRepository:

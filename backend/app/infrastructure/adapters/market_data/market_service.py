@@ -17,7 +17,7 @@ from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 
 from app.config import settings
-from app.services.adapters import get_adapter, DataSourceAdapter, RawQuoteData, RawKlineData, RawSearchResult
+from app.infrastructure.adapters.adapters import get_adapter, DataSourceAdapter, RawQuoteData, RawKlineData, RawSearchResult
 
 
 class MarketDataFormatter:
