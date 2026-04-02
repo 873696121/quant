@@ -1,0 +1,1 @@
+# Trading Bounded Context
