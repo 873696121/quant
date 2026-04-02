@@ -40,3 +40,20 @@ class Position(Base):
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="positions")
+
+    def to_domain(self) -> 'Position':
+        """转换为领域对象"""
+        from domain.trading.aggregates.position import Position
+        from domain.trading.value_objects.position_mode import PositionModeEnum
+        return Position(
+            id=self.id,
+            user_id=self.user_id,
+            symbol=self.symbol,
+            volume=self.volume,
+            frozen_volume=self.frozen_volume,
+            avg_cost=float(self.avg_cost) if self.avg_cost else 0.0,
+            current_price=float(self.current_price) if self.current_price else 0.0,
+            mode=PositionModeEnum(self.mode.value),
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+        )

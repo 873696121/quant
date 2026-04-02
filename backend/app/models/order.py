@@ -77,3 +77,27 @@ class Order(Base):
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="orders")
     backtest: Mapped[Optional["Backtest"]] = relationship("Backtest", back_populates="orders")
+
+    def to_domain(self) -> 'Order':
+        """转换为领域对象"""
+        from domain.trading.aggregates.order import Order
+        from domain.trading.value_objects.order_side import OrderSideEnum
+        from domain.trading.value_objects.order_type import OrderTypeEnum
+        from domain.trading.value_objects.order_status import OrderStatusEnum
+        return Order(
+            id=self.id,
+            user_id=self.user_id,
+            symbol=self.symbol,
+            side=OrderSideEnum(self.direction.value),
+            order_type=OrderTypeEnum(self.order_type.value),
+            price=float(self.price) if self.price else 0.0,
+            stop_price=0.0,
+            volume=self.volume,
+            filled_volume=self.filled_volume,
+            filled_price=0.0,
+            status=OrderStatusEnum(self.status.value),
+            mode=self.mode.value,
+            backtest_id=self.backtest_id,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+        )
