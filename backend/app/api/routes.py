@@ -22,6 +22,11 @@ from app.services.strategy_service import StrategyService
 from app.services.order_service import OrderService
 from app.services.market_service import MarketService
 from app.services.dashboard_service import DashboardService
+from app.application.services import get_order_command_handler
+from app.application.trading.commands.order_commands import CreateOrderCommand, CancelOrderCommand
+from app.domain.trading.value_objects.order_side import OrderSideEnum
+from app.domain.trading.value_objects.order_type import OrderTypeEnum
+from application.trading.commands.handlers import OrderCommandHandler
 
 # Main API router
 api_router = APIRouter(prefix="/api")
@@ -174,11 +179,19 @@ async def list_orders(
 async def create_order(
     data: OrderCreate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    handler: Annotated[OrderCommandHandler, Depends(get_order_command_handler)],
 ):
-    """Create a new order (simulated fill)."""
-    service = OrderService(db)
-    order = await service.create_order(current_user.id, data)
+    """Create a new order (simulated fill) using DDD application layer."""
+    cmd = CreateOrderCommand(
+        user_id=current_user.id,
+        symbol=data.symbol,
+        side=OrderSideEnum(data.side),
+        order_type=OrderTypeEnum(data.type),
+        price=data.price,
+        volume=data.volume,
+        mode=data.mode or "backtest",
+    )
+    order = await handler.handle_create_order(cmd)
     return OrderResponse.model_validate(order)
 
 
@@ -186,13 +199,17 @@ async def create_order(
 async def cancel_order(
     order_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    handler: Annotated[OrderCommandHandler, Depends(get_order_command_handler)],
 ):
-    """Cancel an order."""
-    service = OrderService(db)
-    success = await service.cancel_order(order_id, current_user.id)
-    if not success:
-        raise HTTPException(status_code=400, detail="Cannot cancel order")
+    """Cancel an order using DDD application layer."""
+    cmd = CancelOrderCommand(
+        order_id=order_id,
+        user_id=current_user.id,
+    )
+    try:
+        await handler.handle_cancel_order(cmd)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return {"message": "Order cancelled"}
 
 
