@@ -36,6 +36,9 @@ dist/
 *.log
 logs/
 
+# Worktrees
+.worktrees/
+
 # 其他
 .DS_Store
 Thumbs.db
